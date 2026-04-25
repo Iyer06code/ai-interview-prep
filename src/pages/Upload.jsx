@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { resume as resumeStorage, session as sessionStorage } from '../utils/storage'
+import { session as sessionStorage } from '../utils/storage'
 
 const SAMPLE_ROLES = [
   'Software Engineer', 'Product Manager', 'Business Analyst',
@@ -13,15 +13,9 @@ export default function Upload() {
   const [params] = useSearchParams()
   const [jobTitle, setJobTitle] = useState(params.get('role') || '')
   const [jobDescription, setJobDescription] = useState('')
-  const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    const saved = resumeStorage.get()
-    if (saved?.file) setFile(saved.file)
-  }, [])
-
-  const canProceed = jobTitle.trim() || jobDescription.trim() || file
+  const canProceed = jobTitle.trim() || jobDescription.trim()
 
   const handleStart = async () => {
     if (!canProceed) return
@@ -32,7 +26,7 @@ export default function Upload() {
 
     // Small delay for perceived loading
     await new Promise((r) => setTimeout(r, 800))
-    navigate('/interview')
+    navigate(`/resume?role=${encodeURIComponent(jobTitle || params.get('role') || '')}`)
   }
 
   return (
@@ -46,7 +40,7 @@ export default function Upload() {
           ← Back
         </button>
 
-        <p className="section-label mb-2">Step 1 of 3</p>
+        <p className="section-label mb-2">Step 1 of 4</p>
         <h1 className="font-display text-3xl font-bold mb-2">Set up your interview</h1>
         <p className="text-muted text-sm mb-8">
           Provide a job title or description. The more detail you give, the better your questions will be.
@@ -77,17 +71,6 @@ export default function Upload() {
           </div>
         </div>
 
-        {/* Tab switcher */}
-        <div className="mb-5 flex flex-wrap items-center gap-3">
-          <span className="text-xs font-medium text-muted">Need resume feedback?</span>
-          <button
-            onClick={() => navigate(`/resume?role=${encodeURIComponent(jobTitle || params.get('role') || '')}`)}
-            className="btn-secondary text-xs py-2 px-3"
-          >
-            Upload Resume & Get Roadmap
-          </button>
-        </div>
-
         <textarea
           rows={7}
           value={jobDescription}
@@ -108,12 +91,12 @@ export default function Upload() {
               <Spinner /> Generating questions…
             </span>
           ) : (
-            'Generate Questions & Start →'
+            'Continue to Resume →'
           )}
         </button>
 
         <p className="text-center text-xs text-muted mt-3">
-          Questions are generated using AI and tailored to your input.
+          Next step: upload your resume for a roadmap before interview.
         </p>
       </div>
     </div>
