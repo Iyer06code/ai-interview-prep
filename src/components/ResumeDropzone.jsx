@@ -1,10 +1,43 @@
 import React, { useCallback, useState } from 'react'
 
 const ACCEPTED = ['.pdf', '.doc', '.docx']
+const SKILLS = [
+  'javascript',
+  'typescript',
+  'react',
+  'node',
+  'python',
+  'sql',
+  'aws',
+  'docker',
+  'kubernetes',
+  'communication',
+  'leadership',
+  'problem solving',
+]
 
-export default function ResumeDropzone({ onFile, file }) {
+const ROLE_SKILLS = {
+  'software engineer': ['javascript', 'typescript', 'react', 'node', 'python', 'sql', 'docker', 'aws'],
+  'product manager': ['leadership', 'communication', 'sql', 'problem solving'],
+  'business analyst': ['sql', 'communication', 'problem solving'],
+  'data analyst': ['python', 'sql', 'communication', 'problem solving'],
+  'marketing specialist': ['communication', 'leadership'],
+  'ux designer': ['communication', 'problem solving'],
+  'customer success': ['communication', 'leadership', 'problem solving'],
+  sales: ['communication', 'leadership'],
+}
+
+function computeRating(matchCount) {
+  if (matchCount >= 7) return { label: 'High', className: 'bg-accent/15 text-accent' }
+  if (matchCount >= 4) return { label: 'Intermediate', className: 'bg-yellow-500/15 text-yellow-400' }
+  return { label: 'Low', className: 'bg-red-500/15 text-red-400' }
+}
+
+export default function ResumeDropzone({ onFile, file, jobTitle = '' }) {
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysis, setAnalysis] = useState(null)
 
   const validate = (f) => {
     const ext = '.' + f.name.split('.').pop().toLowerCase()
@@ -20,19 +53,62 @@ export default function ResumeDropzone({ onFile, file }) {
     return true
   }
 
+  const analyzeResumeSkills = useCallback(async (selectedFile) => {
+    setAnalyzing(true)
+    try {
+      const buffer = await selectedFile.arrayBuffer()
+      const text = new TextDecoder('utf-8', { fatal: false })
+        .decode(buffer)
+        .toLowerCase()
+      const combined = `${selectedFile.name.toLowerCase()} ${text}`
+
+      const roleKey = jobTitle.trim().toLowerCase()
+      const targetSkills = ROLE_SKILLS[roleKey] || SKILLS
+      const matchedSkills = targetSkills.filter((skill) => combined.includes(skill))
+      const rating = computeRating(matchedSkills.length)
+      setAnalysis({
+        rating,
+        matchedSkills,
+        targetSkillsCount: targetSkills.length,
+      })
+    } catch (_e) {
+      // Keep graceful fallback for binary formats that don't decode cleanly.
+      const fallbackMatched = SKILLS.filter((skill) =>
+        selectedFile.name.toLowerCase().includes(skill)
+      )
+      const rating = computeRating(fallbackMatched.length)
+      setAnalysis({
+        rating,
+        matchedSkills: fallbackMatched,
+        targetSkillsCount: SKILLS.length,
+      })
+    } finally {
+      setAnalyzing(false)
+    }
+  }, [])
+
+  const processFile = useCallback(
+    async (selectedFile) => {
+      if (!selectedFile || !validate(selectedFile)) return
+      onFile(selectedFile)
+      await analyzeResumeSkills(selectedFile)
+    },
+    [analyzeResumeSkills, onFile]
+  )
+
   const handleDrop = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault()
       setDragging(false)
       const f = e.dataTransfer.files[0]
-      if (f && validate(f)) onFile(f)
+      await processFile(f)
     },
-    [onFile]
+    [processFile]
   )
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const f = e.target.files[0]
-    if (f && validate(f)) onFile(f)
+    await processFile(f)
   }
 
   return (
@@ -61,6 +137,30 @@ export default function ResumeDropzone({ onFile, file }) {
             <p className="text-muted text-xs mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
           </div>
           <span className="badge bg-accent/15 text-accent">✓ Ready to upload</span>
+
+          {analyzing && (
+            <p className="text-xs text-muted">Analyzing resume skills...</p>
+          )}
+
+          {!analyzing && analysis && (
+            <div className="w-full max-w-md mt-2 rounded-xl border border-border bg-surface p-3 text-left">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-muted">Resume skill rating</p>
+                <span className={`badge ${analysis.rating.className}`}>{analysis.rating.label}</span>
+              </div>
+              {jobTitle.trim() && (
+                <p className="text-[11px] text-muted mt-1">
+                  Target role: {jobTitle}
+                </p>
+              )}
+              <p className="text-[11px] text-gray-300 mt-2">
+                Matched skills: {analysis.matchedSkills.length > 0 ? analysis.matchedSkills.join(', ') : 'No major skill keywords found'}
+              </p>
+              <p className="text-[11px] text-muted mt-1">
+                Coverage: {analysis.matchedSkills.length}/{analysis.targetSkillsCount}
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">

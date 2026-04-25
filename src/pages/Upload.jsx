@@ -99,7 +99,7 @@ export default function Upload() {
             className="input resize-none leading-relaxed"
           />
         ) : (
-          <ResumeDropzone onFile={setFile} file={file} />
+          <ResumeDropzone onFile={setFile} file={file} jobTitle={jobTitle} />
         )}
 
         {/* CTA */}
