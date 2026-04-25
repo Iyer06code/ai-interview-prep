@@ -5,16 +5,21 @@ import Upload from './pages/Upload'
 import Interview from './pages/Interview'
 import Report from './pages/Report'
 import Progress from './pages/Progress'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/interview" element={<Interview />} />
-        <Route path="/report" element={<Report />} />
-        <Route path="/progress" element={<Progress />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+        <Route path="/interview" element={<ProtectedRoute><Interview /></ProtectedRoute>} />
+        <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+        <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

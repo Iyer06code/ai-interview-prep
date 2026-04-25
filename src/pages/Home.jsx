@@ -1,5 +1,8 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
+import Navbar from '../components/Navbar'
+import { clerkAppearance } from '../utils/clerkAppearance'
 
 const ROLES = [
   'Software Engineer', 'Product Manager', 'Business Analyst',
@@ -36,6 +39,7 @@ const TESTIMONIALS = [
 
 export default function Home() {
   const navigate = useNavigate()
+  const { isLoaded, isSignedIn } = useAuth()
 
   return (
     <div className="min-h-screen bg-bg text-white relative overflow-hidden">
@@ -44,22 +48,7 @@ export default function Home() {
       <div className="orb w-[400px] h-[400px] bg-blue-500 bottom-[200px] right-[-80px]" />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-5 border-b border-border/50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-            <span className="text-black text-xs font-black">AI</span>
-          </div>
-          <span className="font-display font-semibold text-base tracking-tight">InterviewPrep</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/progress')} className="text-sm text-muted hover:text-white transition-colors hidden md:block">
-            My Progress
-          </button>
-          <button onClick={() => navigate('/upload')} className="btn-primary text-xs py-2.5 px-4">
-            Start Free →
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="relative z-10 max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
@@ -78,9 +67,17 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-up" style={{ animationDelay: '180ms' }}>
-          <button onClick={() => navigate('/upload')} className="btn-primary text-sm px-7 py-3.5">
-            Start practicing free →
-          </button>
+          {isLoaded && isSignedIn ? (
+            <button onClick={() => navigate('/upload')} className="btn-primary text-sm px-7 py-3.5">
+              Go to Dashboard
+            </button>
+          ) : (
+            <SignInButton mode="modal">
+              <button className="btn-primary text-sm px-7 py-3.5">
+                Start practicing free →
+              </button>
+            </SignInButton>
+          )}
           <button onClick={() => navigate('/progress')} className="btn-secondary text-sm px-7 py-3.5">
             View my progress
           </button>
@@ -89,6 +86,13 @@ export default function Home() {
         <p className="text-muted text-xs mt-4 animate-fade-up" style={{ animationDelay: '240ms' }}>
           No credit card · No signup required · Works in Chrome & Edge
         </p>
+
+        {isLoaded && isSignedIn && (
+          <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-surface border border-border px-3 py-2">
+            <span className="text-xs text-muted">Signed in as</span>
+            <UserButton appearance={clerkAppearance} afterSignOutUrl="/" />
+          </div>
+        )}
       </section>
 
       {/* Quick start roles */}
